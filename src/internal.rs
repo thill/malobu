@@ -5,7 +5,7 @@ use std::sync::{atomic::AtomicU64, Arc};
 
 use crate::Entry;
 
-/// Context for a [`crate::LogBuffer`], which is kept in an [`Arc`] to be shared with underlying [`crate::LogStream`]s as their parent.
+/// Context for a [`crate::LogBuffer`], which is kept in an [`Arc`] to be shared with underlying [`crate::Log`]s as their parent.
 pub struct LogBufferContext<T> {
     pub beginning: ArcSwap<EntryLink<T>>, // link immediately before head entry
     pub end: ArcSwap<EntryLink<T>>,       // link immediately after tail entry
@@ -22,14 +22,14 @@ impl<T> LogBufferContext<T> {
     }
 }
 
-/// Context for a [`crate::LogStream`], which is kept in an [`Arc`] to be shared between readers and subscribers.
-pub struct StreamContext<T> {
+/// Context for a [`crate::Log`], which is kept in an [`Arc`] to be shared between readers and readers.
+pub struct LogContext<T> {
     pub parent: Arc<LogBufferContext<T>>,
     pub beginning: ArcSwap<EntryLink<T>>, // link immediately before head entry
     pub end: ArcSwap<EntryLink<T>>,       // link immediately after tail entry
     pub total_weight: AtomicU64,
 }
-impl<T> StreamContext<T> {
+impl<T> LogContext<T> {
     pub fn new(parent: Arc<LogBufferContext<T>>) -> Self {
         let beginning = Arc::new(EntryLink::default());
         Self {
@@ -43,13 +43,13 @@ impl<T> StreamContext<T> {
 
 /// [`Entry`] link information, of which a reference can be kept while allowing the value and other data to be dropped
 pub struct EntryLink<T> {
-    pub stream_next: ArcSwapOption<Entry<T>>,
+    pub log_next: ArcSwapOption<Entry<T>>,
     pub buffer_next: ArcSwapOption<Entry<T>>,
 }
 impl<T> Default for EntryLink<T> {
     fn default() -> Self {
         Self {
-            stream_next: ArcSwapOption::new(None),
+            log_next: ArcSwapOption::new(None),
             buffer_next: ArcSwapOption::new(None),
         }
     }
